@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Town Planner: Make Our Growth Count</title>
+<style>
+:root{--bg:#eef2f5;--ink:#14233b;--card:#fff;--line:#b9c4d0;--teal:#0f7b6c;--amber:#a86f00;--red:#b3261e;--ok:#e3f4ee;--no:#fbe9e7;--hint:#fff4d6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1824;--ink:#e8eef5;--card:#17263a;--line:#3a4d65;--teal:#5fd1bd;--amber:#f0b84a;--red:#ff8a80;--ok:#123a33;--no:#4a2220;--hint:#3d3314}}
+*{box-sizing:inherit}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 Georgia,"Times New Roman",serif}
+main,header,footer{max-width:760px;margin:auto;padding:12px 16px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.25rem;margin:.2em 0 .5em}
+.sub{margin:0;color:var(--teal)}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+button,textarea{font:inherit;color:inherit}
+button{background:var(--card);border:2px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:44px}
+button:hover:not(:disabled){border-color:var(--teal)}button:disabled{opacity:.5;cursor:not-allowed}
+button.on{border-color:var(--teal);background:var(--ok)}button.pri{background:var(--teal);color:#fff;border-color:var(--teal)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.fb{border-left:6px solid var(--line);padding:10px 12px;margin:10px 0;border-radius:6px;background:var(--card)}
+.fb.ok{border-color:var(--teal);background:var(--ok)}.fb.no{border-color:var(--red);background:var(--no)}.fb.hint{border-color:var(--amber);background:var(--hint)}
+.meter{background:var(--line);border-radius:6px;height:22px;overflow:hidden;margin:4px 0 10px}.meter i{display:block;height:100%;background:var(--teal);transition:width .5s}.meter i.g{background:var(--amber)}
+textarea{width:100%;min-height:80px;padding:8px;border:2px solid var(--line);border-radius:8px;background:var(--card)}
+label{display:block;margin:8px 0 2px;font-weight:bold}
+input[type=range]{width:100%;min-height:32px}
+details{margin:8px 0}summary{cursor:pointer;font-weight:bold;min-height:32px}
+.bar{height:10px;background:var(--line);border-radius:5px}.bar i{display:block;height:100%;background:var(--teal);border-radius:5px;transition:width .4s}
+.big{font-size:2rem}
+</style></head><body>
+<header><h1>Town Planner: Make Our Growth Count</h1>
+<p class="sub">You advise the Mayor of Diamond Ridge, a mining town in the Northern Cape.</p>
+<div class="bar" aria-hidden="true"><i id="pb"></i></div><nav id="nav" aria-label="Levels"></nav></header>
+<main id="app" aria-live="polite"></main>
+<footer>
+<details><summary>Town Planner's notebook (your own words)</summary>
+<label for="n1">Economic growth is...</label><textarea id="n1"></textarea>
+<label for="n2">Economic development is...</label><textarea id="n2"></textarea>
+<label for="n3">Quality of life is...</label><textarea id="n3"></textarea></details>
+<details><summary>Glossary</summary>
+<p><b>Industrialisation:</b> when a country builds many factories, machines and industries to make goods.</p>
+<p><b>Economic growth:</b> an increase in production, income and GDP.</p>
+<p><b>GDP:</b> the money value of everything a country makes in a year.</p>
+<p><b>Economic development:</b> better life, health, education and fairness for all, as well as more GDP.</p>
+<p><b>Quality of life:</b> the standard of living and well-being of people.</p>
+<p><b>Evaluate:</b> give positives, give negatives, then make a final judgement.</p></details>
+</footer>
+<script>
+const NM={G:"Economic growth",D:"Economic development",Q:"Quality of life"},IC={G:"▲",D:"◆",Q:"♥"};
+const NAMES=["Meet the Mayor","Sort the Dashboard","Same Growth, Different Lives","Follow the Chain","Advise the Mayor"];
+const CARDS=[["Town GDP","G","GDP is the money value of what the town makes."],["Factory output","G","Output is production."],["Number of mines opened","G","More mines means more production."],["Company profits","G","Profits are income for firms."],["School attendance","D","Schools are a shared service that builds skills and chances."],["Clinic access","D","Clinics improve health across the community."],["Gap between rich and poor","D","Development includes equality for all."],["Clean water in homes","D","Basic services are part of development."],["A family can afford food and a safe home","Q","This is a person's standard of living."],["People feel healthy and safe","Q","Well-being is how people experience life."],["Parents have time for rest and family","Q","Well-being is more than money."],["Children feel happy and supported","Q","This is the well-being of people."]];
+const WRONG={G:"Growth only counts production, income and GDP. Ask: does this card show how people's lives or fairness changed?",
+D:"Development is about shared improvements such as schools, clinics, water and equality. Does this card count output or money, or describe one person's daily life?",
+Q:"Quality of life is how people experience their own lives (food, home, health, well-being). Is this card about one person's life, or a service or output for everyone?"};
+const HINTS=[["What does this card measure: money made, shared services, or how a person lives?","Look at the glossary at the bottom of the page.","Example: 'Number of factories' counts production, so it is Growth."],
+["Ask: does this card count output, or does it show better lives?","Growth = production and income. Development = services and fairness. Quality of life = how a person lives.","Example: 'Clinic access' is a service for everyone, so it is Development."],
+["Try 'Owners' extra profit' at 0. What happens to the development meter?","Growth is the same in both towns. Only the way profit is spent changes.","Spend about 8 of the 10 points on wages, schools, clinics and clean air."],
+["Each step must cause the next one. What happens between 'workers are hired' and 'families spend'?","Workers get paid. Money is what lets families buy things.","Order: factory opens, workers hired, workers earn wages, families spend, quality of life improves."],
+["Think of who gains and who might lose from this project.","A positive could be jobs. A negative could be pollution or low pay. Then decide, with a reason.","Example judgement: 'Overall it is good because..., but only if...'"]];
+let S={lv:0,un:0,st:0,t:{},hh:0,fb:"",sel:null,first:0,cards:[],placed:{},chain:[],opts:[],sl:[0,0,0,0,10],pred:null,ch:[],vr:0};
+const A=document.getElementById("app");
+const sh=a=>[...a].sort(()=>Math.random()-.5);
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fb=(c,m)=>{S.fb=`<div class="fb ${c}"><b>${c=="ok"?"✔ Good thinking. ":c=="no"?"✘ Not yet. ":"Hint: "}</b>${m}</div>`};
+const tried=()=>{S.t[S.lv]=(S.t[S.lv]||0)+1};
+const hintUI=()=>`<div class="row"><button data-a="hint" ${S.t[S.lv]?"":"disabled"}>Hint${S.t[S.lv]?"":" (try first)"}</button></div>`;
+const cats=()=>`<div class="row">${["G","D","Q"].map(c=>`<button data-a="cat" data-v="${c}">${IC[c]} ${NM[c]}</button>`).join("")}</div>`;
+function go(l){S.lv=l;S.st=0;S.hh=0;S.fb="";S.sel=null;S.first=0;S.placed={};S.chain=[];S.pred=null;S.sl=[0,0,0,0,10];S.ch=[];S.cards=sh(CARDS.map((c,i)=>i));S.opts=sh([0,1,2,3,4,5]);S.vr=Math.random()<.5?0:1;render()}
+function unlock(l){S.un=Math.max(S.un,l)}
+function nav(){document.getElementById("nav").innerHTML=NAMES.map((n,i)=>`<button data-a="go" data-v="${i}" class="${i==S.lv?"on":""}" ${i>S.un?"disabled":""} ${i==S.lv?'aria-current="step"':""}>${i<S.un?"★ ":""}Level ${i}: ${n}</button>`).join("");document.getElementById("pb").style.width=(S.un*20+(S.lv==S.un?0:0))+"%"}
+const fbbox=()=>S.fb;
+function cardBtns(list){return `<div class="row">${list.map(i=>`<button data-a="card" data-v="${i}" class="${S.sel==i?"on":""}">${CARDS[i][0]}</button>`).join("")}</div>`}
+function L0(){
+ if(S.st==0)return `<div class="box"><h2>Worked example</h2><p>Mayor Dlamini says: "Our new mine makes more diamonds than last year. Where does 'Number of mines opened' belong?"</p><p><b>Answer: ▲ Economic growth.</b> More mines means more production and income. It does not yet tell us if people's lives improved.</p><p>Growth is output. Development is better lives and fairness. Quality of life is how a person lives.</p><button class="pri" data-a="next">Now I try one</button></div>`;
+ return `<div class="box"><h2>Your turn</h2><p>Where does <b>"Clinic access"</b> belong?</p>${cats().replace(/data-a="cat"/g,'data-a="cat0"')}${S.fb}${hintUI()}</div>`}
+function L1(){
+ if(S.st==0){const rem=S.cards.filter(i=>!(i in S.placed));
+  return `<div class="box"><h2>Sort the 12 indicators</h2><p>Pick a card, then pick its group. Placed: ${Object.keys(S.placed).length}/12</p>${cardBtns(rem)}${S.sel!=null?`<p>Selected: <b>${CARDS[S.sel][0]}</b>. Which group?</p>`:""}${cats()}${S.fb}${hintUI()}</div>`}
+ if(S.st==1){const ok=S.first>=10;return `<div class="box"><h2>${S.first}/12 correct on the first try</h2>${ok?`<p>You are ready for the next task. Write the three groups in your notebook in your own words.</p><button class="pri" data-a="next">Continue</button>`:`<p>You need 10 to move on. The cards will mix again.</p><button class="pri" data-a="go" data-v="1">Replay</button>`}</div>`}
+ return `<div class="box"><h2>Is South Africa fully industrialised?</h2><p><b>Data cards:</b> Many South Africans are unemployed. There is a very large gap between rich and poor.</p><p>True or false: "South Africa is already fully industrialised."</p><div class="row"><button data-a="sa" data-v="T">True</button><button data-a="sa" data-v="F">False</button></div>${S.fb}${hintUI()}</div>`}
+function bars(g,d){return `<div>▲ Growth: ${g}%</div><div class="meter"><i class="g" style="width:${g}%"></i></div><div>◆ Development: ${d}%</div><div class="meter"><i style="width:${d}%"></i></div>`}
+function L2(){
+ if(S.st==0)return `<div class="box"><h2>Predict first</h2><p>Two towns both have the same big rise in GDP. Will people's lives improve in both?</p><div class="col">${["Yes, more GDP always means better lives","Only if profits are spent on people","No, GDP never helps"].map((t,i)=>`<div class="row"><button data-a="pred" data-v="${i}">${t}</button></div>`).join("")}</div></div>`;
+ const lab=["Fair wages","Schools","Clinics","Pollution control","Owners' extra profit"],used=S.sl.reduce((a,b)=>a+b,0);
+ return `<div class="box"><h2>Spend 10 points of profit</h2><p>GDP growth is the same in your town and Sand Bay. You choose how profit is used.</p>${lab.map((l,i)=>`<label for="s${i}">${l}: ${S.sl[i]}</label><input id="s${i}" type="range" min="0" max="10" value="${S.sl[i]}" data-a="sl" data-v="${i}">`).join("")}<p>Points used: ${used}/10</p><button class="pri" data-a="run" ${used!=10?"disabled":""}>Run the year</button>${S.ch.length?bars(80,S.ch[0]):""}${S.fb}${hintUI()}</div>`}
+const CH=["Factory opens","Workers are hired","Workers earn wages","Families spend on food, school and health","Quality of life improves","Workers move to another city"];
+function L3(){
+ if(S.st==0)return `<div class="box"><h2>Build the chain</h2><p>Pick the steps in order, from a factory opening to better lives. One step does not belong.</p><p><b>Your chain:</b> ${S.chain.length?S.chain.map(i=>CH[i]).join(" → "):"(empty)"}</p><div class="row">${S.opts.filter(i=>!S.chain.includes(i)).map(i=>`<button data-a="add" data-v="${i}">${CH[i]}</button>`).join("")}</div><div class="row"><button data-a="undo">Undo</button><button class="pri" data-a="chk" ${S.chain.length<4?"disabled":""}>Check chain</button></div>${S.fb}${hintUI()}</div>`;
+ return `<div class="box"><h2>Explain it with an example from your community</h2><p>Use this start: "Industrialisation creates jobs, which means people earn... so..." Name a real factory, mine or plant near you.</p><textarea id="w" aria-label="Your explanation"></textarea><div class="row"><button class="pri" data-a="w3">Submit</button></div>${S.fb}${hintUI()}</div>`}
+const SC=[["A fruit-processing plant opens in a Western Cape farming town.","Fruit"],["A sand-mining company starts work near a Gauteng township.","Sand"]];
+function L4(){
+ const s=SC[S.vr];
+ if(S.st==0)return `<div class="box"><h2>New case</h2><p><b>${s[0]}</b> The town earns more profit. Choose <b>two</b> government strategies that make sure growth leads to a better life for all.</p>${[["a","Invest profits in free education, clinics and skills training in rural areas"],["b","Let factory owners pay very low wages to make more profit"],["c","Build roads and support small businesses, youth and farmers with grants and training"],["d","Ignore pollution caused by factories"]].map(([k,t])=>`<div class="row"><button data-a="tog" data-v="${k}" class="${S.ch.includes(k)?"on":""}" aria-pressed="${S.ch.includes(k)}">${S.ch.includes(k)?"✔ ":""}${t}</button></div>`).join("")}<button class="pri" data-a="c4" ${S.ch.length!=2?"disabled":""}>Check my two</button>${S.fb}${hintUI()}</div>`;
+ if(S.st==1)return `<div class="box"><h2>Evaluate the project</h2><p>Write all three parts.</p><label for="e1">Positive</label><textarea id="e1"></textarea><label for="e2">Negative</label><textarea id="e2"></textarea><label for="e3">Final judgement (with a reason)</label><textarea id="e3"></textarea><div class="row"><button class="pri" data-a="e4">Submit evaluation</button></div>${S.fb}${hintUI()}</div>`;
+ return `<div class="box"><h2 class="big">★ Town Planner badge</h2><p>You can now:</p><ul><li>Tell growth, development and quality of life apart.</li><li>Explain why growth alone does not improve lives.</li><li>Link jobs to wages, spending and well-being.</li><li>Evaluate a project with positives, negatives and a judgement.</li></ul><button data-a="go" data-v="4">Try another case</button> <button data-a="go" data-v="1">Replay Level 1</button></div>`}
+function render(){nav();A.innerHTML=[L0,L1,L2,L3,L4][S.lv]();const n=["n1","n2","n3"]}
+const model=m=>{S.fb+=`<div class="fb"><b>Model answer (compare with yours):</b> ${m}</div>`};
+const ACT={
+go:v=>go(+v),next:()=>{S.st++;S.fb="";S.sel=null;render()},
+hint:()=>{const h=HINTS[S.lv];fb("hint",h[Math.min(S.hh++,2)]);render()},
+card:v=>{S.sel=+v;render()},
+cat0:c=>{tried();if(c=="D"){fb("ok","Clinics are a shared service that improves health for everyone. That is development.");unlock(1);render();A.insertAdjacentHTML("beforeend",'<div class="row"><button class="pri" data-a="go" data-v="1">Start Level 1</button></div>')}else{fb("no",WRONG[c]);render()}},
+cat:c=>{if(S.sel==null){fb("hint","First pick a card.");return render()}const k=CARDS[S.sel],i=S.sel;
+ if(c==k[1]){if(!(i in S.placed)){S.placed[i]=c;if(!S.t["f"+i])S.first++}fb("ok",k[2]);S.sel=null;if(Object.keys(S.placed).length==12){S.st=1;S.fb=""}}
+ else{S.t["f"+i]=1;tried();fb("no",WRONG[c])}render()},
+sa:v=>{tried();if(v=="F"){fb("ok","Correct. South Africa still has high unemployment and a big gap between rich and poor, so it is a developing, mixed economy.");unlock(2);render();A.insertAdjacentHTML("beforeend",'<div class="row"><button class="pri" data-a="go" data-v="2">Go to Level 2</button></div>')}else{fb("no","Look at the data cards again. Does high unemployment fit a country that is fully industrialised?");render()}},
+pred:v=>{S.pred=+v;S.st=1;render()},
+sl:(v,e)=>{S.sl[+v]=+e.value;const t=S.sl.reduce((a,b)=>a+b,0);if(t>10){S.sl[+v]-=t-10}S.fb="";render();document.getElementById("s"+v).focus()},
+run:()=>{tried();const d=(S.sl[0]+S.sl[1]+S.sl[2]+S.sl[3])*10;S.ch=[d];
+ if(d>=70){fb("ok",`Growth stayed at 80% in both towns, but development rose to ${d}%. GDP shows production. Development shows whether people's lives improved. ${S.pred==2?"GDP does help when it is invested in people.":S.pred==0?"Your prediction was too simple: more GDP does not always mean better lives.":"Your prediction was right."}`);unlock(3)}
+ else fb("no",`Growth is still 80%, but development is only ${d}%. The extra GDP did not reach people's lives. Which choices would reach families?`);
+ render();if(d>=70)A.insertAdjacentHTML("beforeend",'<div class="row"><button class="pri" data-a="go" data-v="3">Go to Level 3</button></div>')},
+add:v=>{S.chain.push(+v);render()},undo:()=>{S.chain.pop();render()},
+chk:()=>{tried();const c=S.chain.join();
+ if(c=="0,1,2,3,4"){S.st=1;fb("ok","The chain is complete. Now explain it with a local example.")}
+ else if(S.chain.includes(5))fb("no","'Workers move to another city' does not lead to better lives in the town. Remove it.");
+ else if(!S.chain.includes(2))fb("no","And then what happens to those workers' families? Something must link jobs to spending.");
+ else fb("no","Each step must cause the next one. Check the order.");render()},
+w3:()=>{tried();const t=document.getElementById("w").value;
+ if(t.trim().length<40)fb("no","Write at least two sentences.");
+ else if(!/factory|industr|mine|mining|plant|mill/i.test(t))fb("no","Is your example industrialisation? A road or bridge is infrastructure. Name a factory, mine or plant.");
+ else if(!/income|wage|money|earn|spend|pay/i.test(t))fb("no","Stopping at 'jobs' is not enough. Show how jobs lead to income.");
+ else{fb("ok","You linked industrialisation to income and to people's lives.");model("Industrialisation creates jobs, so workers earn wages. Families spend the wages on food, school and health, so quality of life improves. For example, a sand-mining company near my town hired local people.");unlock(4)}
+ render();if(S.un>=4&&/ok/.test(S.fb))A.insertAdjacentHTML("beforeend",'<div class="row"><button class="pri" data-a="go" data-v="4">Go to Level 4</button></div>')},
+tog:v=>{const i=S.ch.indexOf(v);if(i>=0)S.ch.splice(i,1);else if(S.ch.length<2)S.ch.push(v);render()},
+c4:()=>{tried();const c=[...S.ch].sort().join();
+ if(c=="a,c"){fb("ok","Both strategies invest growth in people. Education, health and support for small businesses spread the benefits.");S.st=1;S.ch=[];render();S.fb="";S.fb='<div class="fb ok"><b>✔ Strategies correct.</b> Now evaluate.</div>';render()}
+ else{fb("no",S.ch.includes("b")?"Very low wages raise profit but not people's lives. Reconsider.":S.ch.includes("d")?"Ignoring pollution harms health, which lowers quality of life. Reconsider.":"One strategy is right. Which other choice invests in people?");render()}},
+e4:()=>{tried();const v=["e1","e2","e3"].map(i=>document.getElementById(i).value.trim());
+ if(v.some(x=>x.length<15))fb("no",`Complete all three parts. ${v[1].length<15?"Who might lose or what might be harmed?":""}`);
+ else{S.fb="";model("Positive: it creates jobs and income. Negative: pollution or low wages may harm health. Judgement: overall it is good because it improves lives, but only if profits are invested in people and pollution is controlled.");unlock(4);S.st=2;S.fb="";render()}
+ if(S.st<2)render()}
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b&&b.tagName=="BUTTON"&&ACT[b.dataset.a]){e.preventDefault();ACT[b.dataset.a](b.dataset.v,b)}});
+document.addEventListener("input",e=>{const b=e.target;if(b.dataset&&b.dataset.a=="sl")ACT.sl(b.dataset.v,b)});
+go(0);
+</script></body></html>
